@@ -9,6 +9,7 @@ namespace Cmas.Services.CallOffOrders
         public AutoMapperProfile()
         {
             CreateMap<CreateRateRequest, Rate>();
+            CreateMap<UpdateRateRequest, Rate>();
         }
     }
 

@@ -74,21 +74,43 @@ namespace Cmas.Services.CallOffOrders
             /// <summary>
             /// Создать ставку в наряд заказе
             /// </summary>
-            Post<Rate>("/{id}/rate", async (args, ct) =>
+            Post<Rate>("/{id}/rates", async (args, ct) =>
             {
                 CreateRateRequest request = this.Bind();
 
-                Rate newRate = _autoMapper.Map<Rate>(request);
+                Rate rateForCreate = _autoMapper.Map<Rate>(request);
 
-                return await _callOffOrdersBusinessLayer.AddRate(args.id, newRate);
+                return await _callOffOrdersBusinessLayer.AddRate(args.id, rateForCreate);
             });
 
             /// <summary>
-            /// Создать ставку в наряд заказе
+            /// Удалить ставку в наряд заказе
             /// </summary>
-            Delete<Negotiator>("/{callOffOrderId}/rate/{rateId}", async (args, ct) =>
+            Delete<Negotiator>("/{callOffOrderId}/rates/{rateId}", async (args, ct) =>
             {
-                var result = await _callOffOrdersBusinessLayer.DeleteRate(args.callOffOrderId, args.rateId);
+                await _callOffOrdersBusinessLayer.DeleteRate(args.callOffOrderId, args.rateId);
+
+                return Negotiate.WithStatusCode(HttpStatusCode.OK);
+            });
+
+            /// <summary>
+            /// Обновить ставку в наряд заказе
+            /// </summary>
+            Put<Negotiator>("/{callOffOrderId}/rates/{rateId}", async (args, ct) =>
+            {
+                UpdateRateRequest request = this.Bind<UpdateRateRequest>(new BindingConfig {BodyOnly = true});
+
+                var validationResult = this.Validate(request);
+
+                if (!validationResult.IsValid)
+                {
+                    throw new ValidationErrorException(validationResult.FormattedErrors);
+                }
+
+                Rate rateForUpdate = _autoMapper.Map<Rate>(request);
+                rateForUpdate.Id = args.rateId;
+
+                await _callOffOrdersBusinessLayer.UpdateRate(args.callOffOrderId, rateForUpdate);
 
                 return Negotiate.WithStatusCode(HttpStatusCode.OK);
             });
