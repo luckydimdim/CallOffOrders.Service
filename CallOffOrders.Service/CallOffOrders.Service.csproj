@@ -16,18 +16,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Dtos\**" />
     <Compile Remove="Forms\**" />
-    <EmbeddedResource Remove="Dtos\**" />
     <EmbeddedResource Remove="Forms\**" />
-    <None Remove="Dtos\**" />
     <None Remove="Forms\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="6.0.1" />
     <PackageReference Include="Cmas.Infrastructure.Domain" Version="*" />
     <PackageReference Include="Cmas.BusinessLayers.CallOffOrders" Version="*" />
     <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Dtos\Responses\" />
   </ItemGroup>
 
 </Project>
