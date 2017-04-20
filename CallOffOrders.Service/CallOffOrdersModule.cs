@@ -8,6 +8,8 @@ using Cmas.Services.CallOffOrders.Dtos.Requests;
 using Nancy;
 using Nancy.ModelBinding;
 using Nancy.Responses.Negotiation;
+using Nancy.Validation;
+using Cmas.Infrastructure.ErrorHandler;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -55,9 +57,16 @@ namespace Cmas.Services.CallOffOrders
 
             Put("/", async (args, ct) =>
             {
-                CallOffOrder form = this.Bind();
+                CallOffOrder request = this.Bind();
 
-                string result = await _callOffOrdersBusinessLayer.UpdateCallOffOrder(form.Id, form);
+                var validationResult = this.Validate(request);
+
+                if (!validationResult.IsValid)
+                {
+                    throw new ValidationErrorException(validationResult.FormattedErrors);
+                }
+
+                string result = await _callOffOrdersBusinessLayer.UpdateCallOffOrder(request.Id, request);
 
                 return result.ToString();
             });
