@@ -55,9 +55,12 @@ namespace Cmas.Services.CallOffOrders
                 return result.ToString();
             });
 
-            Put("/", async (args, ct) =>
+            /// <summary>
+            /// Обновить наряд заказ
+            /// </summary>
+            Put("/{id}", async (args, ct) =>
             {
-                CallOffOrder request = this.Bind();
+                UpdateCallOffOrderRequest request = this.Bind<UpdateCallOffOrderRequest>();
 
                 var validationResult = this.Validate(request);
 
@@ -66,7 +69,11 @@ namespace Cmas.Services.CallOffOrders
                     throw new ValidationErrorException(validationResult.FormattedErrors);
                 }
 
-                string result = await _callOffOrdersBusinessLayer.UpdateCallOffOrder(request.Id, request);
+                CallOffOrder orderForUpdate = await _callOffOrdersBusinessLayer.GetCallOffOrder(args.Id);
+
+                orderForUpdate = _autoMapper.Map<UpdateCallOffOrderRequest, CallOffOrder>(request, orderForUpdate);
+
+                string result = await _callOffOrdersBusinessLayer.UpdateCallOffOrder(args.Id, orderForUpdate);
 
                 return result.ToString();
             });

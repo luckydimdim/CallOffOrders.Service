@@ -10,6 +10,7 @@ namespace Cmas.Services.CallOffOrders
         {
             CreateMap<CreateRateRequest, Rate>();
             CreateMap<UpdateRateRequest, Rate>();
+            CreateMap<UpdateCallOffOrderRequest, CallOffOrder>();
         }
     }
 
