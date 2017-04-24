@@ -1,128 +1,162 @@
 ﻿using System;
-using AutoMapper;
-using Cmas.BusinessLayers.CallOffOrders;
+using System.Collections.Generic;
 using Cmas.BusinessLayers.CallOffOrders.Entities;
-using Cmas.Infrastructure.Domain.Commands;
-using Cmas.Infrastructure.Domain.Queries;
 using Cmas.Services.CallOffOrders.Dtos.Requests;
 using Nancy;
 using Nancy.ModelBinding;
 using Nancy.Responses.Negotiation;
 using Nancy.Validation;
 using Cmas.Infrastructure.ErrorHandler;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Cmas.Services.CallOffOrders
 {
     public class CallOffOrdersModule : NancyModule
     {
-        private readonly ICommandBuilder _commandBuilder;
-        private readonly IQueryBuilder _queryBuilder;
-        private readonly CallOffOrdersBusinessLayer _callOffOrdersBusinessLayer;
-        private readonly IMapper _autoMapper;
+        private readonly CallOffOrdersService _callOffOrdersService;
 
-        public CallOffOrdersModule(ICommandBuilder commandBuilder, IQueryBuilder queryBuilder,
-            IServiceProvider serviceProvider) : base("/call-off-orders")
+        public CallOffOrdersModule(IServiceProvider serviceProvider) : base("/call-off-orders")
         {
-            _commandBuilder = commandBuilder;
-            _queryBuilder = queryBuilder;
+            _callOffOrdersService = new CallOffOrdersService(serviceProvider);
 
-            _callOffOrdersBusinessLayer = new CallOffOrdersBusinessLayer(_commandBuilder, _queryBuilder);
-            _autoMapper = (IMapper) serviceProvider.GetService(typeof(IMapper));
+            /// <summary>
+            /// /call-off-orders - получить наряд заказы
+            /// </summary>
+            Get<IEnumerable<CallOffOrder>>("/", GetCallOffOrdersAsync,
+                (ctx) => !ctx.Request.Query.ContainsKey("contractId"));
 
-            Get("/", async (args, ct) =>
-            {
-                string contractId = Request.Query["contractId"];
+            /// <summary>
+            /// /call-off-orders?contractId={id} - получить наряд заказы по указанному договору
+            /// </summary>
+            Get<IEnumerable<CallOffOrder>>("/",
+                GetCallOffOrdersByContractIdAsync,
+                (ctx) => ctx.Request.Query.ContainsKey("contractId"));
 
-                if (contractId == null)
-                {
-                    return await _callOffOrdersBusinessLayer.GetCallOffOrders();
-                }
-                else
-                {
-                    return await _callOffOrdersBusinessLayer.GetCallOffOrders(contractId);
-                }
-            });
+            /// <summary>
+            /// /call-off-orders/{id} - получить наряд заказ по указанному ID
+            /// </summary>
+            Get<CallOffOrder>("/{id}", GetCallOffOrderHandlerAsync);
 
-
-            Get("/{id}", async args => await _callOffOrdersBusinessLayer.GetCallOffOrder(args.id));
-
-
-            Post("/", async (args, ct) =>
-            {
-                CallOffOrder form = this.Bind();
-                string result = await _callOffOrdersBusinessLayer.CreateCallOffOrder(form);
-
-                return result.ToString();
-            });
+            /// <summary>
+            /// Создать наряд заказ
+            /// </summary>
+            Post<string>("/", CreateCallOffOrderHandlerAsync);
 
             /// <summary>
             /// Обновить наряд заказ
             /// </summary>
-            Put("/{id}", async (args, ct) =>
-            {
-                UpdateCallOffOrderRequest request = this.Bind<UpdateCallOffOrderRequest>();
-
-                var validationResult = this.Validate(request);
-
-                if (!validationResult.IsValid)
-                {
-                    throw new ValidationErrorException(validationResult.FormattedErrors);
-                }
-
-                CallOffOrder orderForUpdate = await _callOffOrdersBusinessLayer.GetCallOffOrder(args.Id);
-
-                orderForUpdate = _autoMapper.Map<UpdateCallOffOrderRequest, CallOffOrder>(request, orderForUpdate);
-
-                string result = await _callOffOrdersBusinessLayer.UpdateCallOffOrder(args.Id, orderForUpdate);
-
-                return result.ToString();
-            });
+            Put<string>("/{id}", UpdateCallOffOrderHandlerAsync);
 
             /// <summary>
             /// Создать ставку в наряд заказе
             /// </summary>
-            Post<Rate>("/{id}/rates", async (args, ct) =>
-            {
-                CreateRateRequest request = this.Bind();
-
-                Rate rateForCreate = _autoMapper.Map<Rate>(request);
-
-                return await _callOffOrdersBusinessLayer.AddRate(args.id, rateForCreate);
-            });
+            Post<Rate>("/{id}/rates", AddRateHandlerAsync);
 
             /// <summary>
             /// Удалить ставку в наряд заказе
             /// </summary>
-            Delete<Negotiator>("/{callOffOrderId}/rates/{rateId}", async (args, ct) =>
-            {
-                await _callOffOrdersBusinessLayer.DeleteRate(args.callOffOrderId, args.rateId);
-
-                return Negotiate.WithStatusCode(HttpStatusCode.OK);
-            });
+            Delete<Negotiator>("/{callOffOrderId}/rates/{rateId}", DeleteRateHandlerAsync);
 
             /// <summary>
             /// Обновить ставку в наряд заказе
             /// </summary>
-            Put<Negotiator>("/{callOffOrderId}/rates/{rateId}", async (args, ct) =>
-            {
-                UpdateRateRequest request = this.Bind<UpdateRateRequest>(new BindingConfig {BodyOnly = true});
+            Put<Negotiator>("/{callOffOrderId}/rates/{rateId}", UpdateRateHandlerAsync);
 
-                var validationResult = this.Validate(request);
-
-                if (!validationResult.IsValid)
-                {
-                    throw new ValidationErrorException(validationResult.FormattedErrors);
-                }
-
-                Rate rateForUpdate = _autoMapper.Map<Rate>(request);
-                rateForUpdate.Id = args.rateId;
-
-                await _callOffOrdersBusinessLayer.UpdateRate(args.callOffOrderId, rateForUpdate);
-
-                return Negotiate.WithStatusCode(HttpStatusCode.OK);
-            });
-
-            Delete("/{id}", async args => { return await _callOffOrdersBusinessLayer.DeleteCallOffOrder(args.id); });
+            /// <summary>
+            /// Удалить наряд заказ
+            /// </summary>
+            Delete<string>("/{id}", DeleteCallOffOrderHandlerAsync);
         }
+
+        #region Обработчики
+
+        private async Task<CallOffOrder> GetCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            return await _callOffOrdersService.GetCallOffOrderAsync((string) args.id);
+        }
+
+        private async Task<string> CreateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            CallOffOrder request = this.Bind();
+
+            var validationResult = this.Validate(request);
+
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationErrorException(validationResult.FormattedErrors);
+            }
+
+            return await _callOffOrdersService.CreateCallOffOrderAsync(request);
+        }
+
+        private async Task<string> UpdateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            UpdateCallOffOrderRequest request = this.Bind<UpdateCallOffOrderRequest>();
+
+            var validationResult = this.Validate(request);
+
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationErrorException(validationResult.FormattedErrors);
+            }
+
+            return await _callOffOrdersService.UpdateCallOffOrderAsync(args.Id, request);
+        }
+
+        private async Task<Rate> AddRateHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            CreateRateRequest request = this.Bind();
+
+            var validationResult = this.Validate(request);
+
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationErrorException(validationResult.FormattedErrors);
+            }
+
+            return await _callOffOrdersService.AddRateAsync(args.id, request);
+        }
+
+        private async Task<Negotiator> DeleteRateHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            await _callOffOrdersService.DeleteRateAsync(args.callOffOrderId, args.rateId);
+
+            return Negotiate.WithStatusCode(HttpStatusCode.OK);
+        }
+
+        private async Task<Negotiator> UpdateRateHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            UpdateRateRequest request = this.Bind<UpdateRateRequest>(new BindingConfig {BodyOnly = true});
+
+            var validationResult = this.Validate(request);
+
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationErrorException(validationResult.FormattedErrors);
+            }
+
+            await _callOffOrdersService.UpdateRateAsync(args.callOffOrderId, args.rateId, request);
+
+            return Negotiate.WithStatusCode(HttpStatusCode.OK);
+        }
+
+        private async Task<string> DeleteCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            return await _callOffOrdersService.DeleteCallOffOrderAsync(args.id);
+        }
+
+        private async Task<IEnumerable<CallOffOrder>> GetCallOffOrdersAsync(dynamic args, CancellationToken ct)
+        {
+            return await _callOffOrdersService.GetCallOffOrdersAsync();
+        }
+
+        private async Task<IEnumerable<CallOffOrder>> GetCallOffOrdersByContractIdAsync(dynamic args,
+            CancellationToken ct)
+        {
+            return await _callOffOrdersService.GetCallOffOrdersByContractIdAsync(Request.Query["contractId"]);
+        }
+
+        #endregion
     }
 }
