@@ -9,6 +9,7 @@ using Nancy.Validation;
 using Cmas.Infrastructure.ErrorHandler;
 using System.Threading;
 using System.Threading.Tasks;
+using Cmas.Infrastructure.Security;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -18,6 +19,8 @@ namespace Cmas.Services.CallOffOrders
 
         public CallOffOrdersModule(IServiceProvider serviceProvider) : base("/call-off-orders")
         {
+            this.RequiresAuthentication();
+
             _callOffOrdersService = new CallOffOrdersService(serviceProvider);
 
             /// <summary>
