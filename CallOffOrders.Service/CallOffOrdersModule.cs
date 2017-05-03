@@ -81,6 +81,8 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> CreateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
+            this.RequiresRoles(new[] { Role.Customer });
+
             CallOffOrder request = this.Bind();
 
             var validationResult = this.Validate(request);
@@ -95,6 +97,8 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> UpdateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
+            this.RequiresRoles(new[] { Role.Customer });
+
             UpdateCallOffOrderRequest request = this.Bind<UpdateCallOffOrderRequest>();
 
             var validationResult = this.Validate(request);
@@ -109,6 +113,8 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<Rate> AddRateHandlerAsync(dynamic args, CancellationToken ct)
         {
+            this.RequiresRoles(new[] { Role.Customer });
+
             CreateRateRequest request = this.Bind();
 
             var validationResult = this.Validate(request);
@@ -123,6 +129,8 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<Negotiator> DeleteRateHandlerAsync(dynamic args, CancellationToken ct)
         {
+            this.RequiresRoles(new[] { Role.Customer });
+
             await _callOffOrdersService.DeleteRateAsync(args.callOffOrderId, args.rateId);
 
             return Negotiate.WithStatusCode(HttpStatusCode.OK);
@@ -130,6 +138,8 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<Negotiator> UpdateRateHandlerAsync(dynamic args, CancellationToken ct)
         {
+            this.RequiresRoles(new[] { Role.Customer });
+
             UpdateRateRequest request = this.Bind<UpdateRateRequest>(new BindingConfig {BodyOnly = true});
 
             var validationResult = this.Validate(request);
@@ -146,6 +156,8 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> DeleteCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
+            this.RequiresRoles(new[] { Role.Customer });
+
             return await _callOffOrdersService.DeleteCallOffOrderAsync(args.id);
         }
 
