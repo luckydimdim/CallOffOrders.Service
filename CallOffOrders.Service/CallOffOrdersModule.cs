@@ -14,14 +14,28 @@ using Cmas.Infrastructure.Security;
 namespace Cmas.Services.CallOffOrders
 {
     public class CallOffOrdersModule : NancyModule
-    {
-        private readonly CallOffOrdersService _callOffOrdersService;
+    { 
+        private IServiceProvider _serviceProvider;
+
+        private CallOffOrdersService callOffOrdersService;
+
+        private CallOffOrdersService _callOffOrdersService
+        {
+            get
+            {
+                if (callOffOrdersService == null)
+                    callOffOrdersService = new CallOffOrdersService(_serviceProvider, Context);
+
+                return callOffOrdersService;
+            }
+        }
 
         public CallOffOrdersModule(IServiceProvider serviceProvider) : base("/call-off-orders")
         {
             this.RequiresAuthentication();
 
-            _callOffOrdersService = new CallOffOrdersService(serviceProvider);
+            _serviceProvider = serviceProvider;
+            
 
             /// <summary>
             /// /call-off-orders - получить наряд заказы

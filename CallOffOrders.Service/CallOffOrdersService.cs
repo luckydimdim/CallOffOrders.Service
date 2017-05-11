@@ -8,6 +8,7 @@ using Cmas.Infrastructure.Domain.Queries;
 using Cmas.BusinessLayers.CallOffOrders.Entities;
 using System.Threading.Tasks;
 using Cmas.Services.CallOffOrders.Dtos.Requests;
+using Nancy;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -16,14 +17,11 @@ namespace Cmas.Services.CallOffOrders
         private readonly CallOffOrdersBusinessLayer _callOffOrdersBusinessLayer;
         private readonly IMapper _autoMapper;
 
-        public CallOffOrdersService(IServiceProvider serviceProvider)
+        public CallOffOrdersService(IServiceProvider serviceProvider, NancyContext ctx)
         {
-            var _commandBuilder = (ICommandBuilder) serviceProvider.GetService(typeof(ICommandBuilder));
-            var _queryBuilder = (IQueryBuilder) serviceProvider.GetService(typeof(IQueryBuilder));
+               _autoMapper = (IMapper) serviceProvider.GetService(typeof(IMapper));
 
-            _autoMapper = (IMapper) serviceProvider.GetService(typeof(IMapper));
-
-            _callOffOrdersBusinessLayer = new CallOffOrdersBusinessLayer(_commandBuilder, _queryBuilder);
+            _callOffOrdersBusinessLayer = new CallOffOrdersBusinessLayer(serviceProvider, ctx.CurrentUser);
         }
 
         public async Task<CallOffOrder> GetCallOffOrderAsync(string callOffOrderId)
