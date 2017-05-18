@@ -10,6 +10,7 @@ using Cmas.Infrastructure.ErrorHandler;
 using System.Threading;
 using System.Threading.Tasks;
 using Cmas.Infrastructure.Security;
+using Cmas.Services.CallOffOrders.Dtos.Responses;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -40,20 +41,20 @@ namespace Cmas.Services.CallOffOrders
             /// <summary>
             /// /call-off-orders - получить наряд заказы
             /// </summary>
-            Get<IEnumerable<CallOffOrder>>("/", GetCallOffOrdersAsync,
+            Get<IEnumerable<SimpleCallOffOrderResponse>>("/", GetCallOffOrdersAsync,
                 (ctx) => !ctx.Request.Query.ContainsKey("contractId"));
 
             /// <summary>
             /// /call-off-orders?contractId={id} - получить наряд заказы по указанному договору
             /// </summary>
-            Get<IEnumerable<CallOffOrder>>("/",
+            Get<IEnumerable<SimpleCallOffOrderResponse>>("/",
                 GetCallOffOrdersByContractIdAsync,
                 (ctx) => ctx.Request.Query.ContainsKey("contractId"));
 
             /// <summary>
             /// /call-off-orders/{id} - получить наряд заказ по указанному ID
             /// </summary>
-            Get<CallOffOrder>("/{id}", GetCallOffOrderHandlerAsync);
+            Get<DetailedCallOffOrderResponse>("/{id}", GetCallOffOrderHandlerAsync);
 
             /// <summary>
             /// Создать наряд заказ
@@ -88,7 +89,7 @@ namespace Cmas.Services.CallOffOrders
 
         #region Обработчики
 
-        private async Task<CallOffOrder> GetCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
+        private async Task<DetailedCallOffOrderResponse> GetCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
             return await _callOffOrdersService.GetCallOffOrderAsync((string) args.id);
         }
@@ -97,7 +98,7 @@ namespace Cmas.Services.CallOffOrders
         {
             this.RequiresRoles(new[] { Role.Customer });
 
-            CallOffOrder request = this.Bind();
+            CreateCallOffOrderRequest request = this.Bind();
 
             var validationResult = this.Validate(request);
 
@@ -175,12 +176,12 @@ namespace Cmas.Services.CallOffOrders
             return await _callOffOrdersService.DeleteCallOffOrderAsync(args.id);
         }
 
-        private async Task<IEnumerable<CallOffOrder>> GetCallOffOrdersAsync(dynamic args, CancellationToken ct)
+        private async Task<IEnumerable<SimpleCallOffOrderResponse>> GetCallOffOrdersAsync(dynamic args, CancellationToken ct)
         {
             return await _callOffOrdersService.GetCallOffOrdersAsync();
         }
 
-        private async Task<IEnumerable<CallOffOrder>> GetCallOffOrdersByContractIdAsync(dynamic args,
+        private async Task<IEnumerable<SimpleCallOffOrderResponse>> GetCallOffOrdersByContractIdAsync(dynamic args,
             CancellationToken ct)
         {
             return await _callOffOrdersService.GetCallOffOrdersByContractIdAsync(Request.Query["contractId"]);

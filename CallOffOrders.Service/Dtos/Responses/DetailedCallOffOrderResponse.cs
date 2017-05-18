@@ -1,7 +1,21 @@
-﻿namespace Cmas.Services.CallOffOrders.Dtos.Requests
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Cmas.Services.CallOffOrders.Dtos.Responses
 {
-    public class UpdateCallOffOrderRequest
-    { 
+    public class DetailedCallOffOrderResponse
+    {
+        /// <summary>
+        /// Уникальный внутренний идентификатор
+        /// </summary>
+        public string Id;
+         
+        /// <summary>
+        /// Идентификатор договора
+        /// </summary>
+        public string ContractId;
+
         /// <summary>
         /// Номер наряд заказа
         /// </summary>
@@ -11,16 +25,16 @@
         /// ФИО
         /// </summary>
         public string Assignee;
-        
+
         /// <summary>
         /// Дата начала действия наряд-заказа
         /// </summary>
-        public string StartDate;
+        public DateTime? StartDate;
 
         /// <summary>
         /// Дата окончания действия наряд-заказа
         /// </summary>
-        public string FinishDate;
+        public DateTime? FinishDate;
 
         /// <summary>
         /// Наименование заказа (по сути - работы)
@@ -70,12 +84,16 @@
         /// <summary>
         /// Дата мобилизации
         /// </summary>
-        public string MobDate;
+        public DateTime? MobDate;
 
         /// <summary>
-        /// Валюта
+        /// Ставки
         /// </summary>
-        public string CurrencySysName;
+        public List<RateResponse> Rates;
+
+        public List<string> Currencies;
+
+        public string CurrencySysName = "RUR";
 
     }
 }

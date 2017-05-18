@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using AutoMapper;
 using Cmas.BusinessLayers.CallOffOrders;
-using Cmas.Infrastructure.Domain.Commands;
-using Cmas.Infrastructure.Domain.Queries;
 using Cmas.BusinessLayers.CallOffOrders.Entities;
 using System.Threading.Tasks;
 using Cmas.Services.CallOffOrders.Dtos.Requests;
 using Nancy;
+using Cmas.Services.CallOffOrders.Dtos.Responses;
+using Cmas.BusinessLayers.Contracts;
+using Cmas.Infrastructure.ErrorHandler;
 
 namespace Cmas.Services.CallOffOrders
 {
     public class CallOffOrdersService
     {
         private readonly CallOffOrdersBusinessLayer _callOffOrdersBusinessLayer;
+        private readonly ContractsBusinessLayer _contractsBusinessLayer;
         private readonly IMapper _autoMapper;
 
         public CallOffOrdersService(IServiceProvider serviceProvider, NancyContext ctx)
@@ -22,21 +24,50 @@ namespace Cmas.Services.CallOffOrders
                _autoMapper = (IMapper) serviceProvider.GetService(typeof(IMapper));
 
             _callOffOrdersBusinessLayer = new CallOffOrdersBusinessLayer(serviceProvider, ctx.CurrentUser);
+            _contractsBusinessLayer = new ContractsBusinessLayer(serviceProvider, ctx.CurrentUser);
         }
 
-        public async Task<CallOffOrder> GetCallOffOrderAsync(string callOffOrderId)
+        public async Task<DetailedCallOffOrderResponse> GetCallOffOrderAsync(string callOffOrderId)
         {
-            return await _callOffOrdersBusinessLayer.GetCallOffOrder(callOffOrderId);
+            CallOffOrder callOffOrder = await _callOffOrdersBusinessLayer.GetCallOffOrder(callOffOrderId);
+
+            var result = new DetailedCallOffOrderResponse();
+
+            // FIXME: плохо по производительности. Необходимо реализовать функцию _contractsBusinessLayer.GetCurrencies(callOffOrder.ContractId)
+            var contract = await _contractsBusinessLayer.GetContract(callOffOrder.ContractId);
+
+            if (contract == null)
+            {
+                throw new Exception($"contract with id {callOffOrder.ContractId} not found");
+            } 
+            
+            result.Currencies = contract.Amounts.Select(a => a.CurrencySysName).Distinct().ToList();
+
+            return _autoMapper.Map<CallOffOrder,DetailedCallOffOrderResponse>(callOffOrder, result);
         }
 
-        public async Task<string> CreateCallOffOrderAsync(CallOffOrder request)
-        {
-            return await _callOffOrdersBusinessLayer.CreateCallOffOrder(request);
+        public async Task<string> CreateCallOffOrderAsync(CreateCallOffOrderRequest request)
+        { 
+            var contract = await _contractsBusinessLayer.GetContract(request.ContractId);
+
+            if (contract == null)
+            {
+                throw new Exception($"contract with id {request.ContractId} not found");
+            }
+
+            var currencies = contract.Amounts.Select(a => a.CurrencySysName).Distinct().ToList();
+
+            return await _callOffOrdersBusinessLayer.CreateCallOffOrder(request.ContractId, contract.TemplateSysName, currencies.FirstOrDefault());
         }
 
         public async Task<string> UpdateCallOffOrderAsync(string callOffOrderId, UpdateCallOffOrderRequest request)
         {
             CallOffOrder orderForUpdate = await _callOffOrdersBusinessLayer.GetCallOffOrder(callOffOrderId);
+
+            if (orderForUpdate == null)
+            {
+                throw new NotFoundErrorException($"Call Off Order with id {callOffOrderId} not found");
+            }
 
             orderForUpdate = _autoMapper.Map<UpdateCallOffOrderRequest, CallOffOrder>(request, orderForUpdate);
 
@@ -70,14 +101,32 @@ namespace Cmas.Services.CallOffOrders
             return await _callOffOrdersBusinessLayer.DeleteCallOffOrder(callOffOrderId);
         }
 
-        public async Task<IEnumerable<CallOffOrder>> GetCallOffOrdersAsync()
+        public async Task<IEnumerable<SimpleCallOffOrderResponse>> GetCallOffOrdersAsync()
         {
-            return await _callOffOrdersBusinessLayer.GetCallOffOrders();
+            var result = new List<SimpleCallOffOrderResponse>();
+
+            var callOffOrders = await _callOffOrdersBusinessLayer.GetCallOffOrders();
+
+            foreach (var callOffOrder in callOffOrders)
+            {
+                result.Add(_autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder));
+            }
+
+            return result;
         }
 
-        public async Task<IEnumerable<CallOffOrder>> GetCallOffOrdersByContractIdAsync(string contractId)
+        public async Task<IEnumerable<SimpleCallOffOrderResponse>> GetCallOffOrdersByContractIdAsync(string contractId)
         {
-            return await _callOffOrdersBusinessLayer.GetCallOffOrders(contractId);
+            var result = new List<SimpleCallOffOrderResponse>();
+
+            var callOffOrders = await _callOffOrdersBusinessLayer.GetCallOffOrders(contractId);
+
+            foreach (var callOffOrder in callOffOrders)
+            {
+                result.Add(_autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder));
+            }
+
+            return result;
         }
     }
 }
