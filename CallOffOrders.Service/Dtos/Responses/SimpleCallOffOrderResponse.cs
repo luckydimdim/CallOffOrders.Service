@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Cmas.Services.CallOffOrders.Dtos.Responses
 {
@@ -46,7 +44,10 @@ namespace Cmas.Services.CallOffOrders.Dtos.Responses
         /// </summary>
         public string TemplateSysName;  // 'Default', 'Annotech'
         
-        public string CurrencySysName = "RUR";
+        /// <summary>
+        /// Системное имя валюты
+        /// </summary>
+        public string CurrencySysName;
 
     }
 }

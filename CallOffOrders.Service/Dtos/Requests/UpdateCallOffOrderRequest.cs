@@ -1,4 +1,6 @@
-﻿namespace Cmas.Services.CallOffOrders.Dtos.Requests
+﻿using System;
+
+namespace Cmas.Services.CallOffOrders.Dtos.Requests
 {
     public class UpdateCallOffOrderRequest
     { 
@@ -15,12 +17,12 @@
         /// <summary>
         /// Дата начала действия наряд-заказа
         /// </summary>
-        public string StartDate;
+        public DateTime? StartDate;
 
         /// <summary>
         /// Дата окончания действия наряд-заказа
         /// </summary>
-        public string FinishDate;
+        public DateTime? FinishDate;
 
         /// <summary>
         /// Наименование заказа (по сути - работы)
@@ -70,7 +72,7 @@
         /// <summary>
         /// Дата мобилизации
         /// </summary>
-        public string MobDate;
+        public DateTime? MobDate;
 
         /// <summary>
         /// Валюта

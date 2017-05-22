@@ -91,9 +91,12 @@ namespace Cmas.Services.CallOffOrders.Dtos.Responses
         /// </summary>
         public List<RateResponse> Rates;
 
-        public List<string> Currencies;
+        /// <summary>
+        /// Доступные валюты
+        /// </summary>
+        public IEnumerable<string> Currencies;
 
-        public string CurrencySysName = "RUR";
+        public string CurrencySysName;
 
     }
 }

@@ -37,7 +37,6 @@ namespace Cmas.Services.CallOffOrders
 
             _serviceProvider = serviceProvider;
             
-
             /// <summary>
             /// /call-off-orders - получить наряд заказы
             /// </summary>
