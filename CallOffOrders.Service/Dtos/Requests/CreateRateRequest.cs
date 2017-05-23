@@ -18,11 +18,6 @@ namespace Cmas.Services.CallOffOrders.Dtos.Requests
         public double Amount;
 
         /// <summary>
-        /// Валюта
-        /// </summary>
-        public String Currency;
-
-        /// <summary>
         /// Ед. изм.
         /// </summary>
         public String UnitName;

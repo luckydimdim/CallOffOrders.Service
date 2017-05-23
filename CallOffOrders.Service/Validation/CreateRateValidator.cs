@@ -8,9 +8,6 @@ namespace Cmas.Services.CallOffOrders.Validation
     {
         public CreateRateValidator()
         {
-            RuleFor(rate => rate.Currency)
-                .Must(s => !string.IsNullOrEmpty(s))
-                .WithMessage("Currency cannot be null or empty");
 
             RuleFor(rate => rate.UnitName)
                 .Must(s => new []{ "день", "час" }.Contains(s))
