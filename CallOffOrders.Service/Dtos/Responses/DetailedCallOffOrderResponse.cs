@@ -37,6 +37,16 @@ namespace Cmas.Services.CallOffOrders.Dtos.Responses
         public DateTime? FinishDate;
 
         /// <summary>
+        /// 
+        /// </summary>
+        public DateTime? MinDate;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public DateTime? MaxDate;
+
+        /// <summary>
         /// Наименование заказа (по сути - работы)
         /// </summary>
         public string Name;

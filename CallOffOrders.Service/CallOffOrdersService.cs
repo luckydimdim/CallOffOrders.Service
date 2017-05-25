@@ -10,6 +10,7 @@ using Nancy;
 using Cmas.Services.CallOffOrders.Dtos.Responses;
 using Cmas.BusinessLayers.Contracts;
 using Cmas.Infrastructure.ErrorHandler;
+using Cmas.BusinessLayers.Contracts.Entities;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -42,7 +43,7 @@ namespace Cmas.Services.CallOffOrders
                 throw new NotFoundErrorException();
              
             // FIXME: плохо по производительности. Необходимо реализовать функцию _contractsBusinessLayer.GetCurrencies(callOffOrder.ContractId)
-            var contract = await _contractsBusinessLayer.GetContract(callOffOrder.ContractId);
+            Contract contract = await _contractsBusinessLayer.GetContract(callOffOrder.ContractId);
 
             if (contract == null)
             {
@@ -51,6 +52,8 @@ namespace Cmas.Services.CallOffOrders
 
             var result = new DetailedCallOffOrderResponse();
             result.Currencies = contract.Currencies;
+            result.MinDate = contract.StartDate;
+            result.MaxDate = contract.FinishDate;
 
             return _autoMapper.Map<CallOffOrder,DetailedCallOffOrderResponse>(callOffOrder, result);
         }
