@@ -33,8 +33,7 @@ namespace Cmas.Services.CallOffOrders
 
         public CallOffOrdersModule(IServiceProvider serviceProvider) : base("/call-off-orders")
         {
-            this.RequiresAuthentication();
-
+            this.RequiresRoles(new[] { Role.Contractor,Role.Customer});
             _serviceProvider = serviceProvider;
             
             /// <summary>
