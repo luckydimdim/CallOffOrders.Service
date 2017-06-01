@@ -33,7 +33,7 @@ namespace Cmas.Services.CallOffOrders
 
         public CallOffOrdersModule(IServiceProvider serviceProvider) : base("/call-off-orders")
         {
-            this.RequiresRoles(new[] { Role.Contractor,Role.Customer});
+            this.RequiresAnyRole(new[] { Role.Contractor,Role.Customer});
             _serviceProvider = serviceProvider;
             
             /// <summary>
@@ -94,7 +94,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> CreateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresRoles(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer });
 
             CreateCallOffOrderRequest request = this.Bind();
 
@@ -110,7 +110,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> UpdateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresRoles(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer });
 
             UpdateCallOffOrderRequest request = this.Bind<UpdateCallOffOrderRequest>();
 
@@ -126,7 +126,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<Rate> AddRateHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresRoles(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer });
 
             CreateRateRequest request = this.Bind();
 
@@ -142,7 +142,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<Negotiator> DeleteRateHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresRoles(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer });
 
             await _callOffOrdersService.DeleteRateAsync(args.callOffOrderId, args.rateId);
 
@@ -151,7 +151,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<Negotiator> UpdateRateHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresRoles(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer });
 
             UpdateRateRequest request = this.Bind<UpdateRateRequest>(new BindingConfig {BodyOnly = true});
 
@@ -169,7 +169,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> DeleteCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresRoles(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer });
 
             return await _callOffOrdersService.DeleteCallOffOrderAsync(args.id);
         }
