@@ -60,24 +60,14 @@ namespace Cmas.Services.CallOffOrders
             Post<string>("/", CreateCallOffOrderHandlerAsync);
 
             /// <summary>
+            /// Получить данные для создания наряд заказа
+            /// </summary>
+            Get<CallOffOrderToCreateResponse>("/to-create/{contractId}", CallOffOrderToCreateHandlerAsync);
+
+            /// <summary>
             /// Обновить наряд заказ
             /// </summary>
             Put<string>("/{id}", UpdateCallOffOrderHandlerAsync);
-
-            /// <summary>
-            /// Создать ставку в наряд заказе
-            /// </summary>
-            Post<Rate>("/{id}/rates", AddRateHandlerAsync);
-
-            /// <summary>
-            /// Удалить ставку в наряд заказе
-            /// </summary>
-            Delete<Negotiator>("/{callOffOrderId}/rates/{rateId}", DeleteRateHandlerAsync);
-
-            /// <summary>
-            /// Обновить ставку в наряд заказе
-            /// </summary>
-            Put<Negotiator>("/{callOffOrderId}/rates/{rateId}", UpdateRateHandlerAsync);
 
             /// <summary>
             /// Удалить наряд заказ
@@ -90,6 +80,13 @@ namespace Cmas.Services.CallOffOrders
         private async Task<DetailedCallOffOrderResponse> GetCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
             return await _callOffOrdersService.GetCallOffOrderAsync((string) args.id);
+        }
+         
+        private async Task<CallOffOrderToCreateResponse> CallOffOrderToCreateHandlerAsync(dynamic args, CancellationToken ct)
+        {
+            this.RequiresAnyRole(new[] { Role.Customer });
+            
+            return await _callOffOrdersService.CallOffOrderToCreateAsync(args.contractId);
         }
 
         private async Task<string> CreateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
@@ -122,49 +119,6 @@ namespace Cmas.Services.CallOffOrders
             }
 
             return await _callOffOrdersService.UpdateCallOffOrderAsync(args.Id, request);
-        }
-
-        private async Task<Rate> AddRateHandlerAsync(dynamic args, CancellationToken ct)
-        {
-            this.RequiresAnyRole(new[] { Role.Customer });
-
-            CreateRateRequest request = this.Bind();
-
-            var validationResult = this.Validate(request);
-
-            if (!validationResult.IsValid)
-            {
-                throw new ValidationErrorException(validationResult.FormattedErrors);
-            }
-
-            return await _callOffOrdersService.AddRateAsync(args.id, request);
-        }
-
-        private async Task<Negotiator> DeleteRateHandlerAsync(dynamic args, CancellationToken ct)
-        {
-            this.RequiresAnyRole(new[] { Role.Customer });
-
-            await _callOffOrdersService.DeleteRateAsync(args.callOffOrderId, args.rateId);
-
-            return Negotiate.WithStatusCode(HttpStatusCode.OK);
-        }
-
-        private async Task<Negotiator> UpdateRateHandlerAsync(dynamic args, CancellationToken ct)
-        {
-            this.RequiresAnyRole(new[] { Role.Customer });
-
-            UpdateRateRequest request = this.Bind<UpdateRateRequest>(new BindingConfig {BodyOnly = true});
-
-            var validationResult = this.Validate(request);
-
-            if (!validationResult.IsValid)
-            {
-                throw new ValidationErrorException(validationResult.FormattedErrors);
-            }
-
-            await _callOffOrdersService.UpdateRateAsync(args.callOffOrderId, args.rateId, request);
-
-            return Negotiate.WithStatusCode(HttpStatusCode.OK);
         }
 
         private async Task<string> DeleteCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)

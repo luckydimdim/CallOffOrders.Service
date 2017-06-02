@@ -1,11 +1,11 @@
-﻿using System; 
+﻿using System;
+
 namespace Cmas.Services.CallOffOrders.Dtos.Requests
 {
-    /// <summary>
-    /// Модель создания новой ставки
-    /// </summary>
-    public class CreateRateRequest
+    public class RateRequest
     {
+        public string Id;
+
         public String Name;
 
         public bool IsRate;
@@ -16,6 +16,11 @@ namespace Cmas.Services.CallOffOrders.Dtos.Requests
         /// Ставка
         /// </summary>
         public double Amount;
+
+        /// <summary>
+        /// Валюта
+        /// </summary>
+        public String Currency;
 
         /// <summary>
         /// Ед. изм.

@@ -11,13 +11,9 @@ namespace Cmas.Services.CallOffOrders.Validation
         {
             RuleFor(request => request.CurrencySysName).Must(cur => new[] {"USD", "EUR", "JPY", "RUR"}.Contains(cur));
 
-            RuleFor(request => request.StartDate).Must(d => d.HasValue ? d.Value.Kind == DateTimeKind.Utc : true);
+            RuleFor(request => request.StartDate).Must(d => d.Kind == DateTimeKind.Utc);
 
-            RuleFor(request => request.FinishDate).Must(d => d.HasValue ? d.Value.Kind == DateTimeKind.Utc : true);
-
-            RuleFor(request => request).Must(r => (r.StartDate.HasValue && r.FinishDate.HasValue)
-                ? (r.StartDate < r.FinishDate)
-                : true);
+            RuleFor(request => request.FinishDate).Must(d => d.Kind == DateTimeKind.Utc);
         }
     }
 }

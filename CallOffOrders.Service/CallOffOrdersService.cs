@@ -11,6 +11,7 @@ using Cmas.Services.CallOffOrders.Dtos.Responses;
 using Cmas.BusinessLayers.Contracts;
 using Cmas.Infrastructure.ErrorHandler;
 using Cmas.BusinessLayers.Contracts.Entities;
+using Cmas.BusinessLayers.TimeSheets;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -21,6 +22,7 @@ namespace Cmas.Services.CallOffOrders
     {
         private readonly CallOffOrdersBusinessLayer _callOffOrdersBusinessLayer;
         private readonly ContractsBusinessLayer _contractsBusinessLayer;
+        private readonly TimeSheetsBusinessLayer _timeSheetsBusinessLayer;
         private readonly IMapper _autoMapper;
 
         public CallOffOrdersService(IServiceProvider serviceProvider, NancyContext ctx)
@@ -29,6 +31,7 @@ namespace Cmas.Services.CallOffOrders
 
             _callOffOrdersBusinessLayer = new CallOffOrdersBusinessLayer(serviceProvider, ctx.CurrentUser);
             _contractsBusinessLayer = new ContractsBusinessLayer(serviceProvider, ctx.CurrentUser);
+            _timeSheetsBusinessLayer = new TimeSheetsBusinessLayer(serviceProvider, ctx.CurrentUser);
         }
 
         /// <summary>
@@ -54,6 +57,7 @@ namespace Cmas.Services.CallOffOrders
             result.Currencies = contract.Currencies;
             result.MinDate = contract.StartDate;
             result.MaxDate = contract.FinishDate;
+            result.HasTimeSheets = await _timeSheetsBusinessLayer.CountTimeSheetsByCallOffOrderId(callOffOrderId) > 0;
 
             return _autoMapper.Map<CallOffOrder,DetailedCallOffOrderResponse>(callOffOrder, result);
         }
@@ -71,11 +75,39 @@ namespace Cmas.Services.CallOffOrders
                 throw new Exception($"contract with id {request.ContractId} not found");
             }
 
-            string defaultCurrency = contract.Currencies.FirstOrDefault();
-
-            return await _callOffOrdersBusinessLayer.CreateCallOffOrder(request.ContractId, contract.TemplateSysName, defaultCurrency);
+            CallOffOrder newOrder = _autoMapper.Map<CallOffOrder>(request);
+            newOrder.TemplateSysName = contract.TemplateSysName;
+            
+            return await _callOffOrdersBusinessLayer.CreateCallOffOrder(newOrder);
         }
 
+        /// <summary>
+        /// Получить данные для создания наряд заказа
+        /// </summary>
+        /// <returns>ID созданного наряд заказа</returns>
+        public async Task<CallOffOrderToCreateResponse> CallOffOrderToCreateAsync(string contractId)
+        {
+            var contract = await _contractsBusinessLayer.GetContract(contractId);
+
+            if (contract == null)
+            {
+                throw new Exception($"contract with id {contractId} not found");
+            }
+
+            CallOffOrderToCreateResponse response = new CallOffOrderToCreateResponse();
+
+            response.ContractId = contractId;
+            response.Currencies = contract.Currencies;
+            response.MinDate = contract.StartDate;
+            response.MaxDate = contract.FinishDate;
+
+            response.CurrencySysName = response.Currencies.First();
+
+            return response;
+        }
+
+
+        
         /// <summary>
         /// Обновить наряд заказ
         /// </summary>
@@ -99,42 +131,7 @@ namespace Cmas.Services.CallOffOrders
 
             return result;
         }
-
-        /// <summary>
-        /// Добавить ставку/группу
-        /// </summary>
-        public async Task<Rate> AddRateAsync(string callOffOrderId, CreateRateRequest request)
-        {
-            // FIXME: Продумать что делать если по наряд заказу есть табели
-
-            Rate rateForCreate = _autoMapper.Map<Rate>(request);
-
-            return await _callOffOrdersBusinessLayer.AddRate(callOffOrderId, rateForCreate);
-        }
-
-        /// <summary>
-        /// Удалить ставку/группу
-        /// </summary>
-        public async Task DeleteRateAsync(string callOffOrderId, string rateId)
-        {
-            // FIXME: Продумать что делать если по наряд заказу есть табели
-
-            await _callOffOrdersBusinessLayer.DeleteRate(callOffOrderId, rateId);
-        }
-
-        /// <summary>
-        /// Обновить ставку/группу
-        /// </summary>
-        public async Task UpdateRateAsync(string callOffOrderId, string rateId, UpdateRateRequest request)
-        {
-            // FIXME: Продумать что делать если по наряд заказу есть табели
-
-            Rate rateForUpdate = _autoMapper.Map<Rate>(request);
-            rateForUpdate.Id = rateId;
-
-            await _callOffOrdersBusinessLayer.UpdateRate(callOffOrderId, rateForUpdate);
-        }
-
+        
         /// <summary>
         /// Удалить наряд заказ
         /// </summary>
@@ -175,7 +172,9 @@ namespace Cmas.Services.CallOffOrders
 
             foreach (var callOffOrder in callOffOrders)
             {
-                result.Add(_autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder));
+                var simpleCallOffOrderResponse = _autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder);
+                
+                result.Add(simpleCallOffOrderResponse);
             }
 
             return result;

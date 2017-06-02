@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Cmas.Services.CallOffOrders.Dtos.Requests
 {
@@ -17,12 +19,12 @@ namespace Cmas.Services.CallOffOrders.Dtos.Requests
         /// <summary>
         /// Дата начала действия наряд-заказа
         /// </summary>
-        public DateTime? StartDate;
+        public DateTime StartDate;
 
         /// <summary>
         /// Дата окончания действия наряд-заказа
         /// </summary>
-        public DateTime? FinishDate;
+        public DateTime FinishDate;
 
         /// <summary>
         /// Наименование заказа (по сути - работы)
@@ -78,6 +80,11 @@ namespace Cmas.Services.CallOffOrders.Dtos.Requests
         /// Валюта
         /// </summary>
         public string CurrencySysName;
+
+        /// <summary>
+        /// Ставки
+        /// </summary>
+        public IList<RateRequest> Rates;
 
     }
 }
