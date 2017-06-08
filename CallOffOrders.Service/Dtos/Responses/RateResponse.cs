@@ -27,6 +27,6 @@ namespace Cmas.Services.CallOffOrders.Dtos.Responses
         /// <summary>
         /// Ед. изм.
         /// </summary>
-        public String UnitName;
+        public int Unit;
     }
 }

@@ -2,6 +2,7 @@
 using Cmas.BusinessLayers.CallOffOrders.Entities;
 using Cmas.Services.CallOffOrders.Dtos.Requests;
 using Cmas.Services.CallOffOrders.Dtos.Responses;
+using System;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -16,6 +17,10 @@ namespace Cmas.Services.CallOffOrders
             CreateMap<CallOffOrder, DetailedCallOffOrderResponse>();
             CreateMap<CallOffOrder, SimpleCallOffOrderResponse>();
             CreateMap<Rate, RateResponse>();
+
+            CreateMap<RateUnit, int>().ConvertUsing(src => (int)src);
+            CreateMap<int, RateUnit>()
+                .ConvertUsing(src => (RateUnit)Enum.Parse(typeof(RateUnit), src.ToString()));
         }
     }
 
