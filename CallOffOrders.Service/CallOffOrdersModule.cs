@@ -33,7 +33,8 @@ namespace Cmas.Services.CallOffOrders
 
         public CallOffOrdersModule(IServiceProvider serviceProvider) : base("/call-off-orders")
         {
-            this.RequiresAnyRole(new[] { Role.Contractor,Role.Customer});
+            //this.RequiresAnyRole(new[] { Role.Contractor,Role.Customer});
+            this.RequiresAuthentication();
             _serviceProvider = serviceProvider;
             
             /// <summary>
@@ -84,14 +85,14 @@ namespace Cmas.Services.CallOffOrders
          
         private async Task<CallOffOrderToCreateResponse> CallOffOrderToCreateHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresAnyRole(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer, Role.Administrator,  });
             
             return await _callOffOrdersService.CallOffOrderToCreateAsync(args.contractId);
         }
 
         private async Task<string> CreateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresAnyRole(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer, Role.Administrator, });
 
             CreateCallOffOrderRequest request = this.Bind();
 
@@ -107,7 +108,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> UpdateCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresAnyRole(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer, Role.Administrator, });
 
             UpdateCallOffOrderRequest request = this.Bind<UpdateCallOffOrderRequest>();
 
@@ -123,7 +124,7 @@ namespace Cmas.Services.CallOffOrders
 
         private async Task<string> DeleteCallOffOrderHandlerAsync(dynamic args, CancellationToken ct)
         {
-            this.RequiresAnyRole(new[] { Role.Customer });
+            this.RequiresAnyRole(new[] { Role.Customer, Role.Administrator, });
 
             return await _callOffOrdersService.DeleteCallOffOrderAsync(args.id);
         }
