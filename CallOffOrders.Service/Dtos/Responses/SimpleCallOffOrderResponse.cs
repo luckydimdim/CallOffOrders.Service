@@ -48,6 +48,11 @@ namespace Cmas.Services.CallOffOrders.Dtos.Responses
         /// Системное имя валюты
         /// </summary>
         public string CurrencySysName;
-         
+
+        /// <summary>
+        /// Возможность удаления
+        /// </summary>
+        public bool CanDelete;
+
     }
 }

@@ -12,6 +12,8 @@ using Cmas.BusinessLayers.Contracts;
 using Cmas.Infrastructure.ErrorHandler;
 using Cmas.BusinessLayers.Contracts.Entities;
 using Cmas.BusinessLayers.TimeSheets;
+using Cmas.Infrastructure.Security;
+using Cmas.BusinessLayers.Requests;
 
 namespace Cmas.Services.CallOffOrders
 {
@@ -23,15 +25,19 @@ namespace Cmas.Services.CallOffOrders
         private readonly CallOffOrdersBusinessLayer _callOffOrdersBusinessLayer;
         private readonly ContractsBusinessLayer _contractsBusinessLayer;
         private readonly TimeSheetsBusinessLayer _timeSheetsBusinessLayer;
+        private readonly RequestsBusinessLayer _requestsBusinessLayer;
         private readonly IMapper _autoMapper;
+        private readonly NancyContext _context;
 
         public CallOffOrdersService(IServiceProvider serviceProvider, NancyContext ctx)
         {
                _autoMapper = (IMapper) serviceProvider.GetService(typeof(IMapper));
+            _context = ctx;
 
             _callOffOrdersBusinessLayer = new CallOffOrdersBusinessLayer(serviceProvider, ctx.CurrentUser);
             _contractsBusinessLayer = new ContractsBusinessLayer(serviceProvider, ctx.CurrentUser);
             _timeSheetsBusinessLayer = new TimeSheetsBusinessLayer(serviceProvider, ctx.CurrentUser);
+            _requestsBusinessLayer = new RequestsBusinessLayer(serviceProvider, ctx.CurrentUser);
         }
 
         /// <summary>
@@ -139,7 +145,39 @@ namespace Cmas.Services.CallOffOrders
         /// <returns></returns>
         public async Task<string> DeleteCallOffOrderAsync(string callOffOrderId)
         {
-            // FIXME: Продумать что делать если по наряд заказу есть табели
+
+            var timeSheetsCount = await _timeSheetsBusinessLayer.CountTimeSheetsByCallOffOrderId(callOffOrderId);
+            bool isAdmin = _context.CurrentUser.HasRole(Role.Administrator);
+ 
+            if (!isAdmin && timeSheetsCount > 0)
+                throw new ForbiddenErrorException();
+
+            var requests = await _requestsBusinessLayer.GetRequestByCallOffOrderId(callOffOrderId);
+            var timeSheets = await _timeSheetsBusinessLayer.GetTimeSheetsByCallOffOrderId(callOffOrderId);
+
+            // удаляем табели
+            foreach (var timeSheet in timeSheets)
+            {
+                await _timeSheetsBusinessLayer.DeleteTimeSheet(timeSheet.Id);
+            }
+
+            // удаляем/редактируем заявки
+            foreach (var request in requests)
+            {
+
+                if (request.CallOffOrderIds.Count == 1)
+                {
+                    await _requestsBusinessLayer.DeleteRequest(request.Id);
+                }
+                else
+                {
+                    request.CallOffOrderIds.Remove(callOffOrderId);
+                    await _requestsBusinessLayer.UpdateRequest(request);
+                }
+
+            }
+            
+
             return await _callOffOrdersBusinessLayer.DeleteCallOffOrder(callOffOrderId);
         }
 
@@ -150,11 +188,22 @@ namespace Cmas.Services.CallOffOrders
         {
             var result = new List<SimpleCallOffOrderResponse>();
 
+            bool isAdmin = _context.CurrentUser.HasRole(Role.Administrator);
+
             var callOffOrders = await _callOffOrdersBusinessLayer.GetCallOffOrders();
 
             foreach (var callOffOrder in callOffOrders)
             {
-                result.Add(_autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder));
+                var simpleCallOff = _autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder);
+                 
+                simpleCallOff.CanDelete = true;
+
+                var timeSheetsCount = await _timeSheetsBusinessLayer.CountTimeSheetsByCallOffOrderId(callOffOrder.Id);
+
+                if (!isAdmin && timeSheetsCount > 0)
+                    simpleCallOff.CanDelete = false;
+
+                result.Add(simpleCallOff);
             }
 
             return result;
@@ -167,16 +216,24 @@ namespace Cmas.Services.CallOffOrders
         public async Task<IEnumerable<SimpleCallOffOrderResponse>> GetCallOffOrdersByContractIdAsync(string contractId)
         {
             var result = new List<SimpleCallOffOrderResponse>();
+            bool isAdmin = _context.CurrentUser.HasRole(Role.Administrator);
 
             var callOffOrders = await _callOffOrdersBusinessLayer.GetCallOffOrders(contractId);
 
             foreach (var callOffOrder in callOffOrders)
             {
-                var simpleCallOffOrderResponse = _autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder);
-                
-                result.Add(simpleCallOffOrderResponse);
-            }
+                var simpleCallOff = _autoMapper.Map<SimpleCallOffOrderResponse>(callOffOrder);
 
+                simpleCallOff.CanDelete = true;
+
+                var timeSheetsCount = await _timeSheetsBusinessLayer.CountTimeSheetsByCallOffOrderId(callOffOrder.Id);
+
+                if (!isAdmin && timeSheetsCount > 0)
+                    simpleCallOff.CanDelete = false;
+
+                result.Add(simpleCallOff);
+            }
+        
             return result;
         }
 
